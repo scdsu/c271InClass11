@@ -3,6 +3,9 @@
 #include <fstream>
 #include <vector>
 #include <cstring>
+#include <cstdlib>
+
+#define runtests true
 
 using namespace std;
 
@@ -114,6 +117,17 @@ bool get_words(char * file_name, vector<string> &w);
 bool get_reads(char * file_name, vector<string> &r);
 bool write_vector_to_screen(vector<string> v);
 bool write_vector_to_file(vector<string> v, char * file_name);
+void check_for_invalid_characters(BTreeNode * tree);
+
+//Aborts with assertion error if any data in the tree is not y or r
+void check_for_invalid_characters(BTreeNode * root) {
+		if (root == NULL) {return;}
+		if (! (root -> Data == 'y' || root-> Data == 'Y' || root -> Data == 'r' || root -> Data == 'R') ) {
+			cout << "ASSERTION ERROR: Node had data that was not y or r!" << endl; abort();
+		}
+		check_for_invalid_characters(root->Lchild);
+		check_for_invalid_characters(root->Rchild);
+}
 
 int main()
 {
@@ -129,8 +143,16 @@ int main()
         b->add_word_to_tree(words[i]);
 
     /** TEST 1 -- IS THE TREE CORRECTLY SET UP AND POPULATED **/
-
-
+	#ifdef runtests
+		//Should have a root...
+		if (b->Root == NULL) { cout << "ASSERTION FAILURE: Tree has no root" << endl; abort(); }
+		//Should only have Ys and Rs...
+		//(the root is special and contains a -)
+		check_for_invalid_characters(b->Root->Lchild);
+		check_for_invalid_characters(b->Root->Rchild);
+		cout << "Tree generation tests passed OK" << endl;
+	#endif
+		
     vector<string> reads;
     char * reads_file_name="input2.txt";       //make certain to place this file in the correct folder. Do not change path.
     if(!get_reads(reads_file_name,reads))      //will get the reads as binary
@@ -142,7 +164,22 @@ int main()
         is_in[i]=b->is_word_in_tree(reads[i]);
 
     /** TEST 2 -- IS THE TREE CORRECTLY SEARCHED **/
-
+	#ifdef runtests
+		BTree * testtree;
+		testtree = new BTree;
+		testtree -> add_word_to_tree("yryryryr");
+		testtree -> add_word_to_tree("ryryryry");
+		testtree -> add_word_to_tree("yyyrrryy");
+		testtree -> add_word_to_tree("rryyrryy");
+		if (testtree -> is_word_in_tree("yyyyyyyy") || testtree -> is_word_in_tree("rrrrrrrr") || testtree -> is_word_in_tree("yyrryyrr")) {
+			cout << "ASSERTION ERROR: False positive word match." << endl; abort();
+		}
+		if (!testtree -> is_word_in_tree("yryryryr") || !testtree -> is_word_in_tree("ryryryry") || 
+		!testtree -> is_word_in_tree("yyyrrryy") || !testtree -> is_word_in_tree("rryyrryy")) {
+			cout << "ASSERTION ERROR: False negative word match." << endl; abort();
+		}
+		cout << "Tree search tests passed OK" << endl; 
+	#endif
 
     delete is_in;
 
